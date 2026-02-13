@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - Gestion Employés</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #667eea;
+        }
+        
+        .user-info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .actions {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+        
+        .btn-warning:hover {
+            background: #d68910;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .employes-list {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #667eea;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Administration - Gestion Employés</h1>
+            <div class="user-info">
+                <span class="badge">👤 Admin</span>
+                <form action="/logout" method="post" style="margin: 0;">
+                    <button type="submit" class="btn btn-secondary">Déconnexion</button>
+                </form>
+            </div>
+        </div>
+        
+        <div id="message" class="message"></div>
+        
+        <div class="actions">
+            <a href="/ajouter-employe.html" class="btn btn-primary">➕ Ajouter un employé</a>
+            <button onclick="loadEmployes()" class="btn btn-secondary">🔄 Actualiser</button>
+        </div>
+        
+        <div class="employes-list">
+            <h2 style="margin-bottom: 20px; color: #2c3e50;">📋 Liste des employés</h2>
+            <div id="loading" class="loading">Chargement des employés...</div>
+            <div id="tableContainer" style="display: none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Matricule</th>
+                            <th>Nom</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employesList"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Charger les employés au démarrage
+        window.onload = function() {
+            loadEmployes();
+        };
+
+        async function loadEmployes() {
+            const loading = document.getElementById('loading');
+            const tableContainer = document.getElementById('tableContainer');
+            const tbody = document.getElementById('employesList');
+            
+            loading.style.display = 'block';
+            tableContainer.style.display = 'none';
+            
+            try {
+                const response = await fetch('/employes');
+                
+                if (!response.ok) {
+                    throw new Error('Erreur lors du chargement');
+                }
+                
+                const employes = await response.json();
+                tbody.innerHTML = '';
+                
+                if (employes.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 40px; color: #95a5a6;">Aucun employé trouvé</td></tr>';
+                } else {
+                    employes.forEach(emp => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><strong>${emp.matricule}</strong></td>
+                            <td>${emp.nom}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button onclick="modifierEmploye(${emp.matricule}, '${emp.nom}')" class="btn btn-warning">✏️ Modifier</button>
+                                    <button onclick="supprimerEmploye(${emp.matricule})" class="btn btn-danger">🗑️ Supprimer</button>
+                                </div>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+                
+                loading.style.display = 'none';
+                tableContainer.style.display = 'block';
+                
+            } catch (error) {
+                showMessage('Erreur lors du chargement des employés : ' + error.message, 'error');
+                loading.style.display = 'none';
+            }
+        }
+
+        function modifierEmploye(matricule, nomActuel) {
+            const nouveauNom = prompt('Modifier le nom de l\'employé:', nomActuel);
+            
+            if (nouveauNom && nouveauNom.trim() !== '') {
+                fetch(`/employes/${matricule}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ nom: nouveauNom.trim() })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Erreur lors de la modification');
+                    return response.json();
+                })
+                .then(() => {
+                    showMessage('Employé modifié avec succès !', 'success');
+                    loadEmployes();
+                })
+                .catch(error => {
+                    showMessage('Erreur : ' + error.message, 'error');
+                });
+            }
+        }
+
+        function supprimerEmploye(matricule) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
+                fetch(`/employes/${matricule}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Erreur lors de la suppression');
+                    showMessage('Employé supprimé avec succès !', 'success');
+                    loadEmployes();
+                })
+                .catch(error => {
+                    showMessage('Erreur : ' + error.message, 'error');
+                });
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = 'message ' + type;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
