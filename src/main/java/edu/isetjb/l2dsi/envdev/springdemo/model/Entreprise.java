@@ -3,7 +3,8 @@ package edu.isetjb.l2dsi.envdev.springdemo.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -13,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 @Entity
 @Table(name = "ENTREPRISE")
 public class Entreprise {
@@ -25,12 +27,9 @@ public class Entreprise {
     
     private String adresse;
 
-    // Relation 1-N avec Employe (Composition)
     @OneToMany(mappedBy = "entreprise", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
     private List<Employe> employes = new ArrayList<>();
 
-    // Constructeurs
     public Entreprise() {
     }
 
@@ -39,7 +38,6 @@ public class Entreprise {
         this.adresse = adresse;
     }
 
-    // Getters et Setters
     public Integer getId() {
         return id;
     }
@@ -70,16 +68,5 @@ public class Entreprise {
 
     public void setEmployes(List<Employe> employes) {
         this.employes = employes;
-    }
-
-    // Méthodes utilitaires pour gérer la relation bidirectionnelle
-    public void addEmploye(Employe employe) {
-        employes.add(employe);
-        employe.setEntreprise(this);
-    }
-
-    public void removeEmploye(Employe employe) {
-        employes.remove(employe);
-        employe.setEntreprise(null);
     }
 }

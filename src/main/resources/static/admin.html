@@ -379,56 +379,56 @@
             const loading = document.getElementById('loading');
             const tableContainer = document.getElementById('tableContainer');
             const tbody = document.getElementById('employesList');
-            
+    
             loading.style.display = 'block';
             tableContainer.style.display = 'none';
-            
-            try {
-                const response = await fetch('/employes');
-                
-                if (!response.ok) {
-                    throw new Error('Erreur lors du chargement');
-                }
-                
-                const employes = await response.json();
-                tbody.innerHTML = '';
-                
-                if (employes.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #95a5a6;">Aucun employé trouvé</td></tr>';
-                } else {
-                    employes.forEach(emp => {
-                        const entrepriseNom = emp.entreprise ? emp.entreprise.nom : '<em>Aucune</em>';
-                        const departements = emp.departements && emp.departements.length > 0
-                            ? emp.departements.map(d => `<span class="tag dept">${d.nom}</span>`).join('')
-                            : '<em>Aucun</em>';
-                        
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td><strong>${emp.matricule}</strong></td>
-                            <td>${emp.nom || ''}</td>
-                            <td>${emp.prenom || ''}</td>
-                            <td>${emp.fonction || ''}</td>
-                            <td>${entrepriseNom}</td>
-                            <td>${departements}</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button onclick="openEditModal(${emp.matricule})" class="btn btn-warning">✏️</button>
-                                    <button onclick="supprimerEmploye(${emp.matricule})" class="btn btn-danger">🗑️</button>
-                                </div>
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                }
-                
-                loading.style.display = 'none';
-                tableContainer.style.display = 'block';
-                
-            } catch (error) {
-                showMessage('Erreur lors du chargement des employés : ' + error.message, 'error');
-                loading.style.display = 'none';
-            }
+    
+        try {
+        const response = await fetch('/employes?' + new Date().getTime()); // Force pas de cache
+        
+        if (!response.ok) {
+            throw new Error('Erreur lors du chargement');
         }
+        
+        const employes = await response.json();
+        tbody.innerHTML = '';
+        
+        if (employes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #95a5a6;">Aucun employé trouvé</td></tr>';
+        } else {
+            employes.forEach(emp => {
+                const entrepriseNom = (emp.entreprise && emp.entreprise.nom) ? emp.entreprise.nom : '<em>Aucune</em>';
+                const departements = emp.departements && emp.departements.length > 0
+                    ? emp.departements.map(d => `<span class="tag dept">${d.nom}</span>`).join('')
+                    : '<em>Aucun</em>';
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${emp.matricule}</strong></td>
+                    <td>${emp.nom || ''}</td>
+                    <td>${emp.prenom || ''}</td>
+                    <td>${emp.fonction || ''}</td>
+                    <td>${entrepriseNom}</td>
+                    <td>${departements}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button onclick="openEditModal(${emp.matricule})" class="btn btn-warning">✏️</button>
+                            <button onclick="supprimerEmploye(${emp.matricule})" class="btn btn-danger">🗑️</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        loading.style.display = 'none';
+        tableContainer.style.display = 'block';
+        
+    } catch (error) {
+        showMessage('Erreur lors du chargement des employés : ' + error.message, 'error');
+        loading.style.display = 'none';
+    }
+}
 
         async function openEditModal(matricule) {
             try {
