@@ -48,7 +48,7 @@
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
         
@@ -95,6 +95,7 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow-x: auto;
         }
         
         .info-box {
@@ -108,12 +109,14 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 1000px;
         }
         
         th, td {
-            padding: 15px;
+            padding: 12px;
             text-align: left;
             border-bottom: 1px solid #ecf0f1;
+            font-size: 14px;
         }
         
         th {
@@ -161,6 +164,21 @@
             outline: none;
             border-color: #43cea2;
         }
+        
+        .tag {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin: 2px;
+        }
+        
+        .tag.dept {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
     </style>
 </head>
 <body>
@@ -188,7 +206,7 @@
             <h2 style="margin-bottom: 20px; color: #2c3e50;">📋 Liste des employés</h2>
             
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="🔍 Rechercher par matricule ou nom..." onkeyup="filterEmployes()">
+                <input type="text" id="searchInput" placeholder="🔍 Rechercher par matricule, nom, prénom, fonction..." onkeyup="filterEmployes()">
             </div>
             
             <div id="loading" class="loading">Chargement des employés...</div>
@@ -198,6 +216,10 @@
                         <tr>
                             <th>Matricule</th>
                             <th>Nom</th>
+                            <th>Prénom</th>
+                            <th>Fonction</th>
+                            <th>Entreprise</th>
+                            <th>Départements</th>
                         </tr>
                     </thead>
                     <tbody id="employesList"></tbody>
@@ -210,7 +232,6 @@
     <script>
         let allEmployes = [];
 
-        // Charger les employés au démarrage
         window.onload = function() {
             loadEmployes();
         };
@@ -255,10 +276,19 @@
                 noResults.style.display = 'none';
                 
                 employes.forEach(emp => {
+                    const entrepriseNom = emp.entreprise ? emp.entreprise.nom : '<em>Aucune</em>';
+                    const departements = emp.departements && emp.departements.length > 0
+                        ? emp.departements.map(d => `<span class="tag dept">${d.nom}</span>`).join('')
+                        : '<em>Aucun</em>';
+                    
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td><strong>${emp.matricule}</strong></td>
-                        <td>${emp.nom}</td>
+                        <td>${emp.nom || ''}</td>
+                        <td>${emp.prenom || ''}</td>
+                        <td>${emp.fonction || ''}</td>
+                        <td>${entrepriseNom}</td>
+                        <td>${departements}</td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -270,8 +300,16 @@
             
             const filtered = allEmployes.filter(emp => {
                 const matricule = emp.matricule.toString().toLowerCase();
-                const nom = emp.nom.toLowerCase();
-                return matricule.includes(searchTerm) || nom.includes(searchTerm);
+                const nom = (emp.nom || '').toLowerCase();
+                const prenom = (emp.prenom || '').toLowerCase();
+                const fonction = (emp.fonction || '').toLowerCase();
+                const entreprise = emp.entreprise ? emp.entreprise.nom.toLowerCase() : '';
+                
+                return matricule.includes(searchTerm) || 
+                       nom.includes(searchTerm) || 
+                       prenom.includes(searchTerm) || 
+                       fonction.includes(searchTerm) ||
+                       entreprise.includes(searchTerm);
             });
             
             displayEmployes(filtered);

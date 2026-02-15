@@ -1,7 +1,18 @@
 package edu.isetjb.l2dsi.envdev.springdemo.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -9,13 +20,41 @@ import jakarta.persistence.Table;
 public class Employe {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer matricule;
 
     private String nom;
+    
+    private String prenom;
+    
+    private String fonction;
 
+    // Relation N-1 avec Entreprise (optionnelle)
+    @ManyToOne
+    @JoinColumn(name = "entreprise_id")
+    @JsonBackReference
+    private Entreprise entreprise;
+
+    // Relation N-N avec Departement
+    @ManyToMany
+    @JoinTable(
+        name = "employe_departement",
+        joinColumns = @JoinColumn(name = "employe_id"),
+        inverseJoinColumns = @JoinColumn(name = "departement_id")
+    )
+    private List<Departement> departements = new ArrayList<>();
+
+    // Constructeurs
     public Employe() {
     }
 
+    public Employe(String nom, String prenom, String fonction) {
+        this.nom = nom;
+        this.prenom = prenom;
+        this.fonction = fonction;
+    }
+
+    // Getters et Setters
     public Integer getMatricule() {
         return matricule;
     }
@@ -31,4 +70,37 @@ public class Employe {
     public void setNom(String nom) {
         this.nom = nom;
     }
+
+    public String getPrenom() {
+        return prenom;
+    }
+
+    public void setPrenom(String prenom) {
+        this.prenom = prenom;
+    }
+
+    public String getFonction() {
+        return fonction;
+    }
+
+    public void setFonction(String fonction) {
+        this.fonction = fonction;
+    }
+
+    public Entreprise getEntreprise() {
+        return entreprise;
+    }
+
+    public void setEntreprise(Entreprise entreprise) {
+        this.entreprise = entreprise;
+    }
+
+    public List<Departement> getDepartements() {
+        return departements;
+    }
+
+    public void setDepartements(List<Departement> departements) {
+        this.departements = departements;
+    }
+
 }

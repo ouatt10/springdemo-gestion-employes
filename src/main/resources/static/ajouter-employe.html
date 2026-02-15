@@ -19,7 +19,7 @@
         }
         
         .container {
-            max-width: 600px;
+            max-width: 700px;
             margin: 50px auto;
             background: white;
             padding: 40px;
@@ -44,7 +44,7 @@
             font-weight: 500;
         }
         
-        input {
+        input, select {
             width: 100%;
             padding: 12px 15px;
             border: 2px solid #e0e0e0;
@@ -53,7 +53,7 @@
             transition: border-color 0.3s;
         }
         
-        input:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -61,8 +61,6 @@
         .btn {
             width: 100%;
             padding: 14px;
-            background: #667eea;
-            color: white;
             border: none;
             border-radius: 8px;
             font-size: 16px;
@@ -72,7 +70,12 @@
             margin-top: 10px;
         }
         
-        .btn:hover {
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
             background: #5568d3;
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
@@ -80,6 +83,10 @@
         
         .btn-secondary {
             background: #95a5a6;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            display: block;
         }
         
         .btn-secondary:hover {
@@ -104,6 +111,28 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+        
+        .checkbox-group {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .checkbox-item {
+            margin-bottom: 10px;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .checkbox-item label {
+            display: inline;
+            font-weight: normal;
+        }
     </style>
 </head>
 <body>
@@ -114,45 +143,131 @@
 
         <form id="formEmploye">
             <div class="form-group">
-                <label for="matricule">Matricule :</label>
-                <input type="number" id="matricule" required>
-            </div>
-
-            <div class="form-group">
-                <label for="nom">Nom :</label>
+                <label for="nom">Nom *</label>
                 <input type="text" id="nom" required>
             </div>
 
-            <button type="submit" class="btn">Ajouter l'employé</button>
-            <a href="/admin.html" class="btn btn-secondary" style="text-align: center; text-decoration: none; display: block;">Retour à l'administration</a>
+            <div class="form-group">
+                <label for="prenom">Prénom *</label>
+                <input type="text" id="prenom" required>
+            </div>
+
+            <div class="form-group">
+                <label for="fonction">Fonction *</label>
+                <input type="text" id="fonction" required>
+            </div>
+
+            <div class="form-group">
+                <label for="entreprise">Entreprise (optionnel)</label>
+                <select id="entreprise">
+                    <option value="">-- Aucune --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Départements (optionnel)</label>
+                <div class="checkbox-group" id="departementsCheckboxes">
+                    <p style="color: #95a5a6; text-align: center;">Chargement...</p>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Ajouter l'employé</button>
+            <a href="/admin.html" class="btn btn-secondary">Retour à l'administration</a>
         </form>
     </div>
 
     <script>
-        document.getElementById("formEmploye").addEventListener("submit", function(e) {
+        // Charger les entreprises et départements au démarrage
+        window.onload = function() {
+            loadEntreprises();
+            loadDepartements();
+        };
+
+        async function loadEntreprises() {
+            try {
+                const response = await fetch('/entreprises');
+                const entreprises = await response.json();
+                
+                const select = document.getElementById('entreprise');
+                entreprises.forEach(ent => {
+                    const option = document.createElement('option');
+                    option.value = ent.id;
+                    option.textContent = ent.nom;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Erreur chargement entreprises:', error);
+            }
+        }
+
+        async function loadDepartements() {
+            try {
+                const response = await fetch('/departements');
+                const departements = await response.json();
+                
+                const container = document.getElementById('departementsCheckboxes');
+                container.innerHTML = '';
+                
+                if (departements.length === 0) {
+                    container.innerHTML = '<p style="color: #95a5a6; text-align: center;">Aucun département disponible</p>';
+                } else {
+                    departements.forEach(dep => {
+                        const div = document.createElement('div');
+                        div.className = 'checkbox-item';
+                        div.innerHTML = `
+                            <input type="checkbox" id="dep_${dep.id}" value="${dep.id}">
+                            <label for="dep_${dep.id}">${dep.nom}</label>
+                        `;
+                        container.appendChild(div);
+                    });
+                }
+            } catch (error) {
+                console.error('Erreur chargement départements:', error);
+            }
+        }
+
+        document.getElementById("formEmploye").addEventListener("submit", async function(e) {
             e.preventDefault();
 
+            // Récupérer les départements sélectionnés
+            const departementIds = Array.from(document.querySelectorAll('#departementsCheckboxes input[type="checkbox"]:checked'))
+                .map(cb => parseInt(cb.value));
+
             const employe = {
-                matricule: parseInt(document.getElementById("matricule").value),
-                nom: document.getElementById("nom").value.trim()
+                nom: document.getElementById("nom").value.trim(),
+                prenom: document.getElementById("prenom").value.trim(),
+                fonction: document.getElementById("fonction").value.trim(),
+                entreprise: null,
+                departements: []
             };
 
-            // URL RELATIVE (pas de hardcode)
-            fetch("/employes", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(employe)
-            })
-            .then(response => {
+            // Ajouter l'entreprise si sélectionnée
+            const entrepriseId = document.getElementById("entreprise").value;
+            if (entrepriseId) {
+                employe.entreprise = { id: parseInt(entrepriseId) };
+            }
+
+            // Ajouter les départements
+            if (departementIds.length > 0) {
+                employe.departements = departementIds.map(id => ({ id: id }));
+            }
+
+            try {
+                const response = await fetch("/employes", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(employe)
+                });
+
                 if (!response.ok) {
                     throw new Error('Erreur lors de l\'ajout');
                 }
-                return response.json();
-            })
-            .then(data => {
-                showMessage("Employé ajouté avec succès !", "success");
+
+                const data = await response.json();
+                showMessage("✅ Employé ajouté avec succès !", "success");
+                
                 // Réinitialiser le formulaire
                 document.getElementById("formEmploye").reset();
                 
@@ -160,10 +275,10 @@
                 setTimeout(() => {
                     window.location.href = "/admin.html";
                 }, 2000);
-            })
-            .catch(error => {
-                showMessage("Erreur lors de l'ajout : " + error.message, "error");
-            });
+                
+            } catch (error) {
+                showMessage("❌ Erreur lors de l'ajout : " + error.message, "error");
+            }
         });
         
         function showMessage(text, type) {

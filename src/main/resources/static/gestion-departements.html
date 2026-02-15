@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Départements</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .header { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { color: #667eea; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .actions { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn { padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: all 0.3s; text-decoration: none; display: inline-block; margin-right: 10px; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; transform: translateY(-2px); }
+        .btn-secondary { background: #95a5a6; color: white; }
+        .btn-secondary:hover { background: #7f8c8d; }
+        .btn-danger { background: #e74c3c; color: white; padding: 8px 15px; font-size: 14px; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-warning { background: #f39c12; color: white; padding: 8px 15px; font-size: 14px; }
+        .btn-warning:hover { background: #d68910; }
+        .list-container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #ecf0f1; }
+        th { background: #667eea; color: white; }
+        tr:hover { background: #f8f9fa; }
+        .message { padding: 15px; border-radius: 5px; margin-bottom: 20px; display: none; }
+        .message.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .message.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading { text-align: center; padding: 40px; font-size: 18px; color: #667eea; }
+        .action-buttons { display: flex; gap: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📁 Gestion des Départements</h1>
+            <a href="/admin.html" class="btn btn-secondary">Retour Administration</a>
+        </div>
+        <div id="message" class="message"></div>
+        <div class="actions">
+            <button onclick="addDepartement()" class="btn btn-primary">➕ Ajouter un département</button>
+            <button onclick="loadDepartements()" class="btn btn-secondary">🔄 Actualiser</button>
+        </div>
+        <div class="list-container">
+            <h2 style="margin-bottom: 20px; color: #2c3e50;">📋 Liste des départements</h2>
+            <div id="loading" class="loading">Chargement des départements...</div>
+            <div id="tableContainer" style="display: none;">
+                <table>
+                    <thead><tr><th>ID</th><th>Nom du département</th><th>Actions</th></tr></thead>
+                    <tbody id="departementsList"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        window.onload = () => loadDepartements();
+        
+        async function loadDepartements() {
+            const loading = document.getElementById('loading');
+            const tableContainer = document.getElementById('tableContainer');
+            const tbody = document.getElementById('departementsList');
+            loading.style.display = 'block';
+            tableContainer.style.display = 'none';
+            try {
+                const response = await fetch('/departements');
+                if (!response.ok) throw new Error('Erreur de chargement');
+                const departements = await response.json();
+                tbody.innerHTML = '';
+                if (departements.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 40px; color: #95a5a6;">Aucun département trouvé</td></tr>';
+                } else {
+                    departements.forEach(dep => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `<td><strong>${dep.id}</strong></td><td>${dep.nom}</td><td><div class="action-buttons"><button onclick="modifierDepartement(${dep.id}, '${dep.nom.replace(/'/g, "\\'")}')" class="btn btn-warning">✏️ Modifier</button><button onclick="supprimerDepartement(${dep.id})" class="btn btn-danger">🗑️ Supprimer</button></div></td>`;
+                        tbody.appendChild(row);
+                    });
+                }
+                loading.style.display = 'none';
+                tableContainer.style.display = 'block';
+            } catch (error) {
+                showMessage('Erreur : ' + error.message, 'error');
+                loading.style.display = 'none';
+            }
+        }
+        
+        function addDepartement() {
+            const nom = prompt('Nom du département :');
+            if (nom && nom.trim()) {
+                saveDepartement(null, nom.trim());
+            }
+        }
+        
+        function modifierDepartement(id, nomActuel) {
+            const nom = prompt('Modifier le nom du département:', nomActuel);
+            if (nom && nom.trim()) {
+                saveDepartement(id, nom.trim());
+            }
+        }
+        
+        async function saveDepartement(id, nom) {
+            try {
+                const url = id ? `/departements/${id}` : '/departements';
+                const method = id ? 'PUT' : 'POST';
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nom: nom })
+                });
+                if (!response.ok) throw new Error('Erreur lors de l\'enregistrement');
+                showMessage(id ? '✅ Département modifié !' : '✅ Département ajouté !', 'success');
+                loadDepartements();
+            } catch (error) {
+                showMessage('❌ ' + error.message, 'error');
+            }
+        }
+        
+        async function supprimerDepartement(id) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer ce département ?')) return;
+            try {
+                const response = await fetch(`/departements/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Erreur lors de la suppression');
+                showMessage('✅ Département supprimé !', 'success');
+                loadDepartements();
+            } catch (error) {
+                showMessage('❌ ' + error.message, 'error');
+            }
+        }
+        
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = 'message ' + type;
+            messageDiv.style.display = 'block';
+            setTimeout(() => messageDiv.style.display = 'none', 4000);
+        }
+    </script>
+</body>
+</html>

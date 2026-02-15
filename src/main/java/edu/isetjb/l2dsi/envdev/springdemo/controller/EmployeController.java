@@ -58,4 +58,25 @@ public class EmployeController {
         employeService.deleteEmploye(matricule);
         return ResponseEntity.noContent().build();
     }
+
+    // PUT /employes/{matricule}/entreprise/{entrepriseId}
+    @PutMapping("/{matricule}/entreprise/{entrepriseId}")
+    public Employe assignToEntreprise(@PathVariable Integer matricule,
+                                     @PathVariable Integer entrepriseId) {
+        return employeService.assignToEntreprise(matricule, entrepriseId);
+    }
+
+    // PUT /employes/{matricule}/departement/{departementId}
+    @PutMapping("/{matricule}/departement/{departementId}")
+    public Employe assignToDepartement(@PathVariable Integer matricule,
+                                      @PathVariable Integer departementId) {
+        return employeService.assignToDepartement(matricule, departementId);
+    }
+
+    // DELETE /employes/{matricule}/departement/{departementId}
+    @DeleteMapping("/{matricule}/departement/{departementId}")
+    public Employe removeFromDepartement(@PathVariable Integer matricule,
+                                        @PathVariable Integer departementId) {
+        return employeService.removeFromDepartement(matricule, departementId);
+    }
 }

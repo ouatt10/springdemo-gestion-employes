@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Entreprises</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #667eea;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .actions {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+        
+        .btn-warning:hover {
+            background: #d68910;
+        }
+        
+        .list-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #667eea;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        .modal h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏢 Gestion des Entreprises</h1>
+            <a href="/admin.html" class="btn btn-secondary">Retour Administration</a>
+        </div>
+        
+        <div id="message" class="message"></div>
+        
+        <div class="actions">
+            <button onclick="openAddModal()" class="btn btn-primary">➕ Ajouter une entreprise</button>
+            <button onclick="loadEntreprises()" class="btn btn-secondary">🔄 Actualiser</button>
+        </div>
+        
+        <div class="list-container">
+            <h2 style="margin-bottom: 20px; color: #2c3e50;">📋 Liste des entreprises</h2>
+            <div id="loading" class="loading">Chargement des entreprises...</div>
+            <div id="tableContainer" style="display: none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom</th>
+                            <th>Adresse</th>
+                            <th>Employés</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="entreprisesList"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ajout/Modification -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Ajouter une entreprise</h2>
+            <form id="entrepriseForm">
+                <input type="hidden" id="entrepriseId">
+                <div class="form-group">
+                    <label for="nom">Nom de l'entreprise *</label>
+                    <input type="text" id="nom" required>
+                </div>
+                <div class="form-group">
+                    <label for="adresse">Adresse *</label>
+                    <input type="text" id="adresse" required>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <button type="button" onclick="closeModal()" class="btn btn-secondary">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            loadEntreprises();
+        };
+
+        async function loadEntreprises() {
+            const loading = document.getElementById('loading');
+            const tableContainer = document.getElementById('tableContainer');
+            const tbody = document.getElementById('entreprisesList');
+            
+            loading.style.display = 'block';
+            tableContainer.style.display = 'none';
+            
+            try {
+                const response = await fetch('/entreprises');
+                if (!response.ok) throw new Error('Erreur de chargement');
+                
+                const entreprises = await response.json();
+                tbody.innerHTML = '';
+                
+                if (entreprises.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #95a5a6;">Aucune entreprise trouvée</td></tr>';
+                } else {
+                    entreprises.forEach(ent => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><strong>${ent.id}</strong></td>
+                            <td>${ent.nom}</td>
+                            <td>${ent.adresse}</td>
+                            <td>${ent.employes ? ent.employes.length : 0} employé(s)</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button onclick="openEditModal(${ent.id}, '${ent.nom.replace(/'/g, "\\'")}', '${ent.adresse.replace(/'/g, "\\'")}')" class="btn btn-warning">✏️ Modifier</button>
+                                    <button onclick="deleteEntreprise(${ent.id})" class="btn btn-danger">🗑️ Supprimer</button>
+                                </div>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+                
+                loading.style.display = 'none';
+                tableContainer.style.display = 'block';
+                
+            } catch (error) {
+                showMessage('Erreur : ' + error.message, 'error');
+                loading.style.display = 'none';
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Ajouter une entreprise';
+            document.getElementById('entrepriseId').value = '';
+            document.getElementById('entrepriseForm').reset();
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function openEditModal(id, nom, adresse) {
+            document.getElementById('modalTitle').textContent = 'Modifier l\'entreprise';
+            document.getElementById('entrepriseId').value = id;
+            document.getElementById('nom').value = nom;
+            document.getElementById('adresse').value = adresse;
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        document.getElementById('entrepriseForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('entrepriseId').value;
+            const entreprise = {
+                nom: document.getElementById('nom').value.trim(),
+                adresse: document.getElementById('adresse').value.trim()
+            };
+            
+            try {
+                const url = id ? `/entreprises/${id}` : '/entreprises';
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(entreprise)
+                });
+                
+                if (!response.ok) throw new Error('Erreur lors de l\'enregistrement');
+                
+                showMessage(id ? '✅ Entreprise modifiée !' : '✅ Entreprise ajoutée !', 'success');
+                closeModal();
+                loadEntreprises();
+                
+            } catch (error) {
+                showMessage('❌ ' + error.message, 'error');
+            }
+        });
+
+        async function deleteEntreprise(id) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer cette entreprise ? Tous les employés associés seront également supprimés.')) return;
+            
+            try {
+                const response = await fetch(`/entreprises/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Erreur lors de la suppression');
+                
+                showMessage('✅ Entreprise supprimée !', 'success');
+                loadEntreprises();
+                
+            } catch (error) {
+                showMessage('❌ ' + error.message, 'error');
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = 'message ' + type;
+            messageDiv.style.display = 'block';
+            setTimeout(() => messageDiv.style.display = 'none', 4000);
+        }
+
+        // Fermer le modal en cliquant à l'extérieur
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -30,25 +30,26 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                // Page de login accessible à tous
-                .requestMatchers("/login.html").permitAll()
-                
-                // API REST accessible aux deux rôles (GET seulement)
-                .requestMatchers("/employes").hasAnyRole("ADMIN", "EMPLOYE")
-                .requestMatchers("/employes/**").hasAnyRole("ADMIN", "EMPLOYE")
-                
-                // Pages Admin uniquement
-                .requestMatchers("/admin.html", "/ajouter-employe.html").hasRole("ADMIN")
-                
-                // Page Employé
-                .requestMatchers("/employe.html").hasRole("EMPLOYE")
-                
-                // H2 Console
-                .requestMatchers("/h2-console/**").permitAll()
-                
-                // Tout le reste nécessite authentification
-                .anyRequest().authenticated()
-            )
+            // Page de login accessible à tous
+            .requestMatchers("/login.html").permitAll()
+    
+            // API REST accessible aux deux rôles (GET)
+            .requestMatchers("/employes", "/employes/**").hasAnyRole("ADMIN", "EMPLOYE")
+            .requestMatchers("/entreprises", "/entreprises/**").hasAnyRole("ADMIN", "EMPLOYE")
+            .requestMatchers("/departements", "/departements/**").hasAnyRole("ADMIN", "EMPLOYE")
+    
+            // Pages Admin uniquement
+            .requestMatchers("/admin.html", "/ajouter-employe.html", "/gestion-entreprises.html", "/gestion-departements.html").hasRole("ADMIN")
+    
+            // Page Employé
+            .requestMatchers("/employe.html").hasRole("EMPLOYE")
+    
+            // H2 Console
+            .requestMatchers("/h2-console/**").permitAll()
+    
+            // Tout le reste nécessite authentification
+            .anyRequest().authenticated()
+)   
             .headers(headers -> headers.frameOptions(frame -> frame.disable()))
             .formLogin(form -> form
                 .loginPage("/login.html")
