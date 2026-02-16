@@ -9,7 +9,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -22,12 +24,15 @@ public class Departement {
 
     private String nom;
 
-    // Relation N-N avec Employe (Agrégation)
+    @ManyToOne
+    @JoinColumn(name = "entreprise_id", nullable = false)
+    @JsonIgnore
+    private Entreprise entreprise;
+
     @ManyToMany(mappedBy = "departements")
     @JsonIgnore
     private List<Employe> employes = new ArrayList<>();
 
-    // Constructeurs
     public Departement() {
     }
 
@@ -35,7 +40,6 @@ public class Departement {
         this.nom = nom;
     }
 
-    // Getters et Setters
     public Integer getId() {
         return id;
     }
@@ -50,6 +54,14 @@ public class Departement {
 
     public void setNom(String nom) {
         this.nom = nom;
+    }
+
+    public Entreprise getEntreprise() {
+        return entreprise;
+    }
+
+    public void setEntreprise(Entreprise entreprise) {
+        this.entreprise = entreprise;
     }
 
     public List<Employe> getEmployes() {

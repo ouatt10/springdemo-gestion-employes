@@ -3,8 +3,7 @@ package edu.isetjb.l2dsi.envdev.springdemo.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -14,7 +13,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 @Entity
 @Table(name = "ENTREPRISE")
 public class Entreprise {
@@ -28,6 +26,11 @@ public class Entreprise {
     private String adresse;
 
     @OneToMany(mappedBy = "entreprise", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Departement> departements = new ArrayList<>();
+
+    @OneToMany(mappedBy = "entreprise", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Employe> employes = new ArrayList<>();
 
     public Entreprise() {
@@ -60,6 +63,14 @@ public class Entreprise {
 
     public void setAdresse(String adresse) {
         this.adresse = adresse;
+    }
+
+    public List<Departement> getDepartements() {
+        return departements;
+    }
+
+    public void setDepartements(List<Departement> departements) {
+        this.departements = departements;
     }
 
     public List<Employe> getEmployes() {

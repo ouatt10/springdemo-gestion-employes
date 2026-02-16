@@ -33,6 +33,13 @@
             color: #667eea;
         }
         
+        .warning {
+            font-size: 14px;
+            color: #e74c3c;
+            font-weight: 500;
+            margin-top: 5px;
+        }
+        
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -63,9 +70,15 @@
             color: white;
         }
         
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background: #5568d3;
             transform: translateY(-2px);
+        }
+        
+        .btn-primary:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
         }
         
         .btn-secondary {
@@ -205,25 +218,43 @@
             outline: none;
             border-color: #667eea;
         }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #95a5a6;
+        }
+        
+        .empty-state h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🏢 Gestion des Entreprises</h1>
-            <a href="/admin.html" class="btn btn-secondary">Retour Administration</a>
+            <div>
+                <h1>🏢 Gestion de l'Entreprise Unique</h1>
+                <div class="warning">
+                    ⚠️ Suppression = Perte TOTALE (employés + départements)
+                </div>
+            </div>
+            <a href="/admin.html" class="btn btn-secondary">← Retour Admin</a>
         </div>
         
         <div id="message" class="message"></div>
         
         <div class="actions">
-            <button onclick="openAddModal()" class="btn btn-primary">➕ Ajouter une entreprise</button>
+            <button id="addBtn" onclick="openAddModal()" class="btn btn-primary">
+                ➕ Créer Entreprise (si aucune)
+            </button>
             <button onclick="loadEntreprises()" class="btn btn-secondary">🔄 Actualiser</button>
         </div>
         
         <div class="list-container">
-            <h2 style="margin-bottom: 20px; color: #2c3e50;">📋 Liste des entreprises</h2>
-            <div id="loading" class="loading">Chargement des entreprises...</div>
+            <h2 style="margin-bottom: 20px; color: #2c3e50;">📋 État de l'entreprise</h2>
+            <div id="loading" class="loading">Chargement...</div>
             <div id="tableContainer" style="display: none;">
                 <table>
                     <thead>
@@ -232,11 +263,19 @@
                             <th>Nom</th>
                             <th>Adresse</th>
                             <th>Employés</th>
+                            <th>Départements</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="entreprisesList"></tbody>
                 </table>
+            </div>
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <h3>🗑️ Aucune entreprise</h3>
+                <p>Créez votre première entreprise pour commencer à ajouter départements et employés</p>
+                <button onclick="openAddModal()" class="btn btn-primary" style="margin-top: 20px;">
+                    🚀 Créer l'entreprise
+                </button>
             </div>
         </div>
     </div>
@@ -244,7 +283,7 @@
     <!-- Modal Ajout/Modification -->
     <div id="modal" class="modal">
         <div class="modal-content">
-            <h2 id="modalTitle">Ajouter une entreprise</h2>
+            <h2 id="modalTitle">Créer l'entreprise</h2>
             <form id="entrepriseForm">
                 <input type="hidden" id="entrepriseId">
                 <div class="form-group">
@@ -256,8 +295,8 @@
                     <input type="text" id="adresse" required>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button type="submit" class="btn btn-primary">Enregistrer</button>
-                    <button type="button" onclick="closeModal()" class="btn btn-secondary">Annuler</button>
+                    <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+                    <button type="button" onclick="closeModal()" class="btn btn-secondary">❌ Annuler</button>
                 </div>
             </form>
         </div>
@@ -269,52 +308,82 @@
         };
 
         async function loadEntreprises() {
-            const loading = document.getElementById('loading');
-            const tableContainer = document.getElementById('tableContainer');
-            const tbody = document.getElementById('entreprisesList');
-            
-            loading.style.display = 'block';
-            tableContainer.style.display = 'none';
-            
-            try {
-                const response = await fetch('/entreprises');
-                if (!response.ok) throw new Error('Erreur de chargement');
-                
-                const entreprises = await response.json();
-                tbody.innerHTML = '';
-                
-                if (entreprises.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #95a5a6;">Aucune entreprise trouvée</td></tr>';
-                } else {
-                    entreprises.forEach(ent => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td><strong>${ent.id}</strong></td>
-                            <td>${ent.nom}</td>
-                            <td>${ent.adresse}</td>
-                            <td>${ent.employes ? ent.employes.length : 0} employé(s)</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button onclick="openEditModal(${ent.id}, '${ent.nom.replace(/'/g, "\\'")}', '${ent.adresse.replace(/'/g, "\\'")}')" class="btn btn-warning">✏️ Modifier</button>
-                                    <button onclick="deleteEntreprise(${ent.id})" class="btn btn-danger">🗑️ Supprimer</button>
-                                </div>
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                }
-                
-                loading.style.display = 'none';
-                tableContainer.style.display = 'block';
-                
-            } catch (error) {
-                showMessage('Erreur : ' + error.message, 'error');
-                loading.style.display = 'none';
-            }
+    const loading = document.getElementById('loading');
+    const tableContainer = document.getElementById('tableContainer');
+    const emptyState = document.getElementById('emptyState');
+    const tbody = document.getElementById('entreprisesList');
+    const addBtn = document.getElementById('addBtn');
+    
+    loading.style.display = 'block';
+    tableContainer.style.display = 'none';
+    emptyState.style.display = 'none';
+    
+    try {
+        const response = await fetch('/entreprises');
+        if (!response.ok) throw new Error('Erreur de chargement');
+        
+        const entreprises = await response.json();
+        tbody.innerHTML = '';
+        
+        if (entreprises.length === 0) {
+            emptyState.style.display = 'block';
+            addBtn.disabled = false;
+            addBtn.textContent = '➕ Créer Entreprise';
+            loading.style.display = 'none';
+            return;
         }
+        
+        const ent = entreprises[0];
+        
+        // ✅ SOLUTION DEFINITIVE : Comptage avec .count ou fallback 0
+        let employesCount = 0, departsCount = 0;
+        
+        try {
+            const employesRes = await fetch('/employes');
+            const employesData = await employesRes.json();
+            employesCount = Array.isArray(employesData) ? employesData.length : 0;
+        } catch(e) { employesCount = 0; }
+        
+        try {
+            const departsRes = await fetch('/departements');
+            const departsData = await departsRes.json();
+            departsCount = Array.isArray(departsData) ? departsData.length : 0;
+        } catch(e) { departsCount = 0; }
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${ent.id}</strong></td>
+            <td><strong>${ent.nom}</strong></td>
+            <td>${ent.adresse}</td>
+            <td><strong style="color: #27ae60;">${employesCount}</strong></td>
+            <td><strong style="color: #3498db;">${departsCount}</strong></td>
+            <td>
+                <div class="action-buttons">
+                    <button onclick="openEditModal(${ent.id}, '${ent.nom.replace(/'/g, "\\'")}', '${ent.adresse.replace(/'/g, "\\'")}')" 
+                            class="btn btn-warning">✏️ Modifier</button>
+                    <button onclick="deleteEntreprise(${ent.id})" class="btn btn-danger">🗑️ SUPPRIMER TOUT</button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+        
+        addBtn.disabled = true;
+        addBtn.textContent = '✅ Entreprise active';
+        
+        loading.style.display = 'none';
+        tableContainer.style.display = 'block';
+        
+    } catch (error) {
+        showMessage('❌ Erreur : ' + error.message, 'error');
+        loading.style.display = 'none';
+    }
+}
+
+
 
         function openAddModal() {
-            document.getElementById('modalTitle').textContent = 'Ajouter une entreprise';
+            if (document.getElementById('entrepriseId').value) return; // Mode edit
+            document.getElementById('modalTitle').textContent = 'Créer l\'entreprise';
             document.getElementById('entrepriseId').value = '';
             document.getElementById('entrepriseForm').reset();
             document.getElementById('modal').style.display = 'block';
@@ -353,7 +422,7 @@
                 
                 if (!response.ok) throw new Error('Erreur lors de l\'enregistrement');
                 
-                showMessage(id ? '✅ Entreprise modifiée !' : '✅ Entreprise ajoutée !', 'success');
+                showMessage(id ? '✅ Entreprise modifiée !' : '✅ Entreprise créée !', 'success');
                 closeModal();
                 loadEntreprises();
                 
@@ -363,17 +432,31 @@
         });
 
         async function deleteEntreprise(id) {
-            if (!confirm('Êtes-vous sûr de vouloir supprimer cette entreprise ? Tous les employés associés seront également supprimés.')) return;
+            const stats = await fetch('/entreprises/' + id).then(r => r.json());
+            const totalEmployes = stats.employes ? stats.employes.length : 0;
+            const totalDeparts = stats.departements ? stats.departements.length : 0;
+            
+            const confirmation = confirm(
+                `⚠️ SUPPRESSION CRITIQUE TOTALE !\n\n` +
+                `📊 Données à perdre :\n` +
+                `• ${totalEmployes} employé(s)\n` +
+                `• ${totalDeparts} département(s)\n` +
+                `• TOUTE la base de données\n\n` +
+                `❌ Cette action est IRREVERSIBLE\n` +
+                `Voulez-vous vraiment continuer ?`
+            );
+            
+            if (!confirmation) return;
             
             try {
                 const response = await fetch(`/entreprises/${id}`, { method: 'DELETE' });
                 if (!response.ok) throw new Error('Erreur lors de la suppression');
                 
-                showMessage('✅ Entreprise supprimée !', 'success');
+                showMessage('🗑️ ENTREPRISE + TOUTES DONNÉES SUPPRIMÉES', 'success');
                 loadEntreprises();
                 
             } catch (error) {
-                showMessage('❌ ' + error.message, 'error');
+                showMessage('❌ Erreur : ' + error.message, 'error');
             }
         }
 
@@ -382,10 +465,9 @@
             messageDiv.textContent = text;
             messageDiv.className = 'message ' + type;
             messageDiv.style.display = 'block';
-            setTimeout(() => messageDiv.style.display = 'none', 4000);
+            setTimeout(() => messageDiv.style.display = 'none', 5000);
         }
 
-        // Fermer le modal en cliquant à l'extérieur
         window.onclick = function(event) {
             const modal = document.getElementById('modal');
             if (event.target == modal) {
